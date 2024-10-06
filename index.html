@@ -116,7 +116,7 @@
             unityInstance = instance;
             loadingBar.style.display = "none";
 
-            console.log("unityInstance is ready!");
+            console.log("unityInstance is running!");
             // fullscreenButton.onclick = () => {
             //     unityInstance.SetFullscreen(1);
             // };
@@ -148,25 +148,16 @@
 
                 // If user data is available, fill the userData object
                 if (user) {
-                    userData = {
-                        ...userData,
-                        id: user.id,
-                        first_name: user.first_name,
-                        last_name: user.last_name,
-                        username: user.username,
-                        photo_url: user.photo_url,
-                        language_code: user.language_code,
-                        auth_date: authDate,
-                        hash: userHash
-                    };
+                    // Send the user data (or error) to Unity
+                    unityInstance.SendMessage('[Singleton] WebGLHandler', 'OnReceiveUserData', JSON.stringify(user));
                 } else {
-                    userData.error = "User data is not available";
+                    unityInstance.SendMessage('[Singleton] WebGLHandler', 'OnUserDataUnavailable', "Telegram.WebApp.initDataUnsafe.user is null!");
                 }
             } else {
-                userData.error = "Telegram WebApp is not available";
+                unityInstance.SendMessage('[Singleton] WebGLHandler', 'OnUserDataUnavailable', "Telegram is null");
             }
         } catch (err) {
-            userData.error = `Error: ${err.message}`;
+            unityInstance.SendMessage('[Singleton] WebGLHandler', 'OnUserDataUnavailable', `Error: ${err.message}`);
         }
 
         // Send the user data (or error) to Unity
