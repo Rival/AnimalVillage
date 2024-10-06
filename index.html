@@ -158,17 +158,5 @@
 
     document.body.appendChild(script);
 </script>
-
-<script>
-    if(window.Telegram.WebApp){
-        window.Telegram.WebApp.onEvent('qrTextReceived',async (obj)=>{
-            console.log('#qrTextReceived',obj)
-            if( window.unityInstance){
-                window.unityInstance.SendMessage("TelegramController", "OnQrDetected", obj.data);
-            }
-        })
-    }
-</script>
-
 </body>
 </html>
