@@ -58,53 +58,6 @@
         }
         updateBannerVisibility();
     }
-
-    // Функция для получения данных пользователя из Telegram WebApp и передачи их в Unity
-    function GetTelegramUserData() {
-        let userData = {
-            error: null,
-            id: null,
-            first_name: null,
-            last_name: null,
-            username: null,
-            photo_url: null,
-            language_code: null,
-            auth_date: null,
-            hash: null
-        };
-
-        try {
-            if (window.Telegram && window.Telegram.WebApp) {
-                const user = Telegram.WebApp.initDataUnsafe.user;
-                const authDate = Telegram.WebApp.initDataUnsafe.auth_date;
-                const userHash = Telegram.WebApp.initDataUnsafe.hash;
-
-                // If user data is available, fill the userData object
-                if (user) {
-                    userData = {
-                        ...userData,
-                        id: user.id,
-                        first_name: user.first_name,
-                        last_name: user.last_name,
-                        username: user.username,
-                        photo_url: user.photo_url,
-                        language_code: user.language_code,
-                        auth_date: authDate,
-                        hash: userHash
-                    };
-                } else {
-                    userData.error = "User data is not available";
-                }
-            } else {
-                userData.error = "Telegram WebApp is not available";
-            }
-        } catch (err) {
-            userData.error = `Error: ${err.message}`;
-        }
-
-        // Send the user data (or error) to Unity
-        unityInstance.SendMessage('WebGLHandler', 'OnReceiveUserData', JSON.stringify(userData));
-    }
     
     var buildUrl = "Build";
     var loaderUrl = buildUrl + "/animal_village_WEBGL.loader.js";
@@ -153,13 +106,17 @@
 
     loadingBar.style.display = "block";
 
+    var unityInstance = null;
     var script = document.createElement("script");
     script.src = loaderUrl;
     script.onload = () => {
         createUnityInstance(canvas, config, (progress) => {
             progressBarFull.style.width = 100 * progress + "%";
-        }).then((unityInstance) => {
+        }).then((instance) => {
+            unityInstance = instance;
             loadingBar.style.display = "none";
+
+            console.log("unityInstance is ready!");
             // fullscreenButton.onclick = () => {
             //     unityInstance.SetFullscreen(1);
             // };
@@ -167,6 +124,54 @@
             alert(message);
         });
     };
+
+
+    // Функция для получения данных пользователя из Telegram WebApp и передачи их в Unity
+    function GetTelegramUserData() {
+        let userData = {
+            error: null,
+            id: null,
+            first_name: null,
+            last_name: null,
+            username: null,
+            photo_url: null,
+            language_code: null,
+            auth_date: null,
+            hash: null
+        };
+
+        try {
+            if (window.Telegram && window.Telegram.WebApp) {
+                const user = Telegram.WebApp.initDataUnsafe.user;
+                const authDate = Telegram.WebApp.initDataUnsafe.auth_date;
+                const userHash = Telegram.WebApp.initDataUnsafe.hash;
+
+                // If user data is available, fill the userData object
+                if (user) {
+                    userData = {
+                        ...userData,
+                        id: user.id,
+                        first_name: user.first_name,
+                        last_name: user.last_name,
+                        username: user.username,
+                        photo_url: user.photo_url,
+                        language_code: user.language_code,
+                        auth_date: authDate,
+                        hash: userHash
+                    };
+                } else {
+                    userData.error = "User data is not available";
+                }
+            } else {
+                userData.error = "Telegram WebApp is not available";
+            }
+        } catch (err) {
+            userData.error = `Error: ${err.message}`;
+        }
+
+        // Send the user data (or error) to Unity
+        unityInstance.SendMessage('[Singleton] WebGLHandler', 'OnReceiveUserData', JSON.stringify(userData));
+    }
 
     document.body.appendChild(script);
 </script>
