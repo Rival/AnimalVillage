@@ -128,18 +128,6 @@
 
     // Функция для получения данных пользователя из Telegram WebApp и передачи их в Unity
     function GetTelegramUserData() {
-        let userData = {
-            error: null,
-            id: null,
-            first_name: null,
-            last_name: null,
-            username: null,
-            photo_url: null,
-            language_code: null,
-            auth_date: null,
-            hash: null
-        };
-
         try {
             if (window.Telegram && window.Telegram.WebApp) {
                 const user = Telegram.WebApp.initDataUnsafe.user;
@@ -148,8 +136,14 @@
 
                 // If user data is available, fill the userData object
                 if (user) {
+                    const userData = {
+                        ...user,
+                        auth_date: authDate,
+                        hash: userHash
+                    };
+                    
                     // Send the user data (or error) to Unity
-                    unityInstance.SendMessage('[Singleton] WebGLHandler', 'OnReceiveUserData', JSON.stringify(user));
+                    unityInstance.SendMessage('[Singleton] WebGLHandler', 'OnReceiveUserData', JSON.stringify(userData));
                 } else {
                     unityInstance.SendMessage('[Singleton] WebGLHandler', 'OnUserDataUnavailable', "Telegram.WebApp.initDataUnsafe.user is null!");
                 }
@@ -159,9 +153,6 @@
         } catch (err) {
             unityInstance.SendMessage('[Singleton] WebGLHandler', 'OnUserDataUnavailable', `Error: ${err.message}`);
         }
-
-        // Send the user data (or error) to Unity
-        unityInstance.SendMessage('[Singleton] WebGLHandler', 'OnReceiveUserData', JSON.stringify(userData));
     }
 
     document.body.appendChild(script);
