@@ -3,13 +3,86 @@
 <head>
     <meta charset="utf-8">
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self' https://telegram.org; script-src 'self' https://telegram.org 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:;">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self' https://telegram.org; connect-src 'self' https://api.gameanalytics.com https://telemetry.gameanalytics.com; script-src 'self' https://telegram.org https://cdn.gameanalytics.com 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data:;">
     <title>Unity WebGL Player | Animal Village</title>
     <link rel="shortcut icon" href="TemplateData/favicon.ico">
     <link rel="stylesheet" href="TemplateData/style.css">
+
+    <!-- Подключение кастомного шрифта -->
+    <style>
+        @font-face {
+            font-family: 'Avenir';
+            src: url('fonts/Avenir.woff2') format('woff2'),
+                 url('fonts/Avenir.woff') format('woff');
+            font-weight: normal;
+            font-style: normal;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 1000;
+            background-color: rgba(0, 0, 0, 0.7);
+            padding: 0;
+            border-radius: 10px;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
+            width: 300px;
+        }
+
+        .modal-content {
+            background-color: white;
+            padding: 20px;
+            border-radius: 10px;
+        }
+
+        .modal-text {
+            font-family: 'Avenir', sans-serif;
+            color: #333;
+            font-size: 16px;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .accept-button {
+            display: block;
+            margin: 0 auto;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            padding: 15px 30px;
+            font-size: 16px;
+            cursor: pointer;
+            box-shadow: 0 5px 10px rgba(0, 0, 0, 0.2);
+            transition: background-color 0.3s ease, transform 0.2s;
+        }
+
+        .accept-button:hover {
+            background-color: #45a049;
+            transform: scale(1.05);
+        }
+
+        .accept-button:active {
+            background-color: #3e8e41;
+            transform: scale(1);
+        }
+    </style>
+
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
 </head>
 <body>
+
+<!-- Модалка для запроса на использование cookies -->
+<div id="cookieConsent" class="modal">
+    <div class="modal-content">
+        <p id="modal-text" class="modal-text">This game uses cookies for analytics. By playing, you agree to our use of cookies.</p>
+        <button class="accept-button" onclick="acceptCookies()">Accept</button>
+    </div>
+</div>
+
 <div id="unity-container" style="position: absolute; width: 100%; height: 100%; left: 0%; top: 0%;">
     <canvas id="unity-canvas" style="position: absolute; width: 100%; height: 100%"></canvas>
     <div id="unity-loading-bar">
@@ -64,9 +137,9 @@
     var buildUrl = "Build";
     var loaderUrl = buildUrl + "/0145c752a950e797e3f5c26444736e72.loader.js";
     var config = {
-        dataUrl: buildUrl + "/0adf322325f25c7adedbf85b2ca42e0d.data",
-        frameworkUrl: buildUrl + "/8c1465dc5bdd876b11eb1bb8b2109b2a.framework.js",
-        codeUrl: buildUrl + "/71f258dc6a9d761784554d55844f27f9.wasm",
+        dataUrl: buildUrl + "/6bf7622ee1335e7a072691040fb14222.data",
+        frameworkUrl: buildUrl + "/5dbd3d2307f7891337d36b8e71c2208d.framework.js",
+        codeUrl: buildUrl + "/a015ecedc23f0f246cb12067401f8cbc.wasm",
         streamingAssetsUrl: "StreamingAssets",
         companyName: "DefaultCompany",
     productName: "Animal Village",
@@ -126,6 +199,37 @@
             alert(message);
         });
     };
+
+    document.body.appendChild(script);
+
+    // Показ модалки через 5 секунд
+    function showCookieConsent() {
+        document.getElementById("cookieConsent").style.display = "block";
+    }
+
+    window.onload = function() {
+        setTimeout(showCookieConsent, 5000); // Задержка 5 секунд
+    };
+
+    // Функция для инициализации GameAnalytics после согласия
+    function acceptCookies() {
+        document.getElementById("cookieConsent").style.display = "none";
+        initializeGameAnalytics();
+    }
+
+    // Инициализация GameAnalytics
+    function initializeGameAnalytics() {
+        var script = document.createElement("script");
+        script.src = "https://cdn.gameanalytics.com/analytics.js";
+        script.onload = function() {
+            GameAnalytics.initialize({
+                gameKey: 'bafd75d76fb233eb0247d24317057b01',
+                secretKey: '1074a7ebc82270c0a60622d8acaa5817e9926cfa'
+            });
+        console.log("GameAnalytics initialized!");
+        };
+        document.body.appendChild(script);
+    }
 
 
     // Функция для получения данных пользователя из Telegram WebApp и передачи их в Unity
