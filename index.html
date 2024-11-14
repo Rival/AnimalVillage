@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8">
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self' https://telegram.org; connect-src 'self' https://api.gameanalytics.com https://telemetry.gameanalytics.com ws://37.48.105.196:5001; script-src 'self' https://telegram.org https://cdn.gameanalytics.com 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data:;">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self' https://telegram.org; media-src * blob:; connect-src 'self' https://api.gameanalytics.com https://telemetry.gameanalytics.com ws://37.48.105.196:5001 wss://37.48.105.196:5003 http://37.48.105.196:5001 https://37.48.105.196:5003 ws://dev.animalvillage.org:5001 wss://dev.animalvillage.org:5003 http://dev.animalvillage.org:5001 https://dev.animalvillage.org:5003 ws://release.animalvillage.org:5001 wss://release.animalvillage.org:5003 http://release.animalvillage.org:5001 https://release.animalvillage.org:5003; script-src 'self' https://www.unpkg.com https://telegram.org https://cdn.gameanalytics.com 'unsafe-inline' 'unsafe-eval' blob:; style-src 'self' 'unsafe-inline'; img-src 'self' data:;">
     <title>Unity WebGL Player | Animal Village</title>
     <link rel="shortcut icon" href="TemplateData/favicon.ico">
     <link rel="stylesheet" href="TemplateData/style.css">
@@ -71,6 +71,7 @@
         }
     </style>
 
+    <script src="https://www.unpkg.com/@microsoft/signalr@8.0.7/dist/browser/signalr.js"></script>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
 </head>
 <body>
@@ -92,14 +93,6 @@
         </div>
     </div>
     <div id="unity-warning"> </div>
-<!--    <div id="unity-footer">-->
-<!--        <div id="unity-webgl-logo"></div>-->
-<!--        <div id="unity-fullscreen-button"></div>-->
-<!--        #if SHOW_DIAGNOSTICS-->
-<!--        <img id="diagnostics-icon" src="TemplateData/webmemd-icon.png">-->
-<!--        #endif-->
-<!--        <div id="unity-build-title">Animal Village</div>-->
-<!--    </div>-->
 </div>
 <script>
 
@@ -107,16 +100,9 @@
     var canvas = document.querySelector("#unity-canvas");
     var loadingBar = document.querySelector("#unity-loading-bar");
     var progressBarFull = document.querySelector("#unity-progress-bar-full");
-    //var fullscreenButton = document.querySelector("#unity-fullscreen-button");
     
     var warningBanner = document.querySelector("#unity-warning");
 
-    // Shows a temporary message banner/ribbon for a few seconds, or
-    // a permanent error message on top of the canvas if type=='error'.
-    // If type=='warning', a yellow highlight color is used.
-    // Modify or remove this function to customize the visually presented
-    // way that non-critical warnings and error messages are presented to the
-    // user.
     function unityShowBanner(msg, type) {
         function updateBannerVisibility() {
             warningBanner.style.display = warningBanner.children.length ? 'block' : 'none';
@@ -134,51 +120,76 @@
         }
         updateBannerVisibility();
     }
-    
+
+    // Функция для сохранения данных в Local Storage
+    function setLocalStorage(name, value) {
+        localStorage.setItem(name, value);
+    }
+
+    // Функция для получения данных из Local Storage
+    function getLocalStorage(name) {
+        return localStorage.getItem(name);
+    }
+
+    // Функция для сохранения cookies
+    function setCookie(name, value, days) {
+        var expires = "";
+        if (days) {
+            var date = new Date();
+            date.setTime(date.getTime() + (days * 24 * 60 * 60 * 1000));
+            expires = "; expires=" + date.toUTCString();
+        }
+        document.cookie = name + "=" + (value || "") + expires + "; path=/";
+    }
+
+    // Функция для получения cookies
+    function getCookie(name) {
+        var nameEQ = name + "=";
+        var ca = document.cookie.split(';');
+        for (var i = 0; i < ca.length; i++) {
+            var c = ca[i];
+            while (c.charAt(0) == ' ') c = c.substring(1, c.length);
+            if (c.indexOf(nameEQ) == 0) return c.substring(nameEQ.length, c.length);
+        }
+        return null;
+    }
+
+    // Проверяем наличие согласия на использование cookies и Local Storage
+    function checkCookieConsent() {
+        var consent = getLocalStorage("cookieConsent") || getCookie("cookieConsent");
+        if (consent === "true") {
+            // Если согласие уже получено, инициализируем аналитику
+            initializeGameAnalytics();
+        } else {
+            // Если согласия нет, показываем модалку
+            showCookieConsent();
+        }
+    }
+
     var buildUrl = "Build";
     var loaderUrl = buildUrl + "/0145c752a950e797e3f5c26444736e72.loader.js";
     var config = {
-        dataUrl: buildUrl + "/0b3792f59e8ebff9b2f39d898ae6ade2.data",
-        frameworkUrl: buildUrl + "/2f9f201ebf6473a06c5aeb926a90878f.framework.js",
-        codeUrl: buildUrl + "/6ac54b5fcd44e0fb72f176635c18d6ca.wasm",
+        dataUrl: buildUrl + "/cf78bffa463c13aab3c1c813d15a0cb9.data",
+        frameworkUrl: buildUrl + "/9685b7fb42ac6605a2174746b46d7f39.framework.js",
+        codeUrl: buildUrl + "/1b995d1f4c0e1d610a78c6b7833e1ac0.wasm",
         streamingAssetsUrl: "StreamingAssets",
         companyName: "DefaultCompany",
-    productName: "Animal Village",
-    productVersion: "1.0",
-    showBanner: unityShowBanner,
+        productName: "Animal Village",
+        productVersion: "1.0",
+        showBanner: unityShowBanner,
     };
 
-    // By default, Unity keeps WebGL canvas render target size matched with
-    // the DOM size of the canvas element (scaled by window.devicePixelRatio)
-    // Set this to false if you want to decouple this synchronization from
-    // happening inside the engine, and you would instead like to size up
-    // the canvas DOM size and WebGL render target sizes yourself.
-    // config.matchWebGLToCanvasSize = false;
-
     if (/iPhone|iPad|iPod|Android/i.test(navigator.userAgent)) {
-        // Mobile device style: fill the whole browser client area with the game canvas:
-
         var meta = document.createElement('meta');
         meta.name = 'viewport';
         meta.content = 'width=device-width, height=device-height, initial-scale=1.0, user-scalable=no, shrink-to-fit=yes';
         document.getElementsByTagName('head')[0].appendChild(meta);
         container.className = "unity-mobile";
         canvas.className = "unity-mobile";
-
-        // To lower canvas resolution on mobile devices to gain some
-        // performance, uncomment the following line:
-        // config.devicePixelRatio = 1;
-
-
-    }
-    else {
-        // Desktop style: Render the game canvas in a window that can be maximized to fullscreen:
-
+    } else {
         canvas.style.width = "100%";
         canvas.style.height = "100%";
     }
-
-
 
     loadingBar.style.display = "block";
 
@@ -193,9 +204,6 @@
             loadingBar.style.display = "none";
 
             console.log("unityInstance is running!");
-            // fullscreenButton.onclick = () => {
-            //     unityInstance.SetFullscreen(1);
-            // };
         }).catch((message) => {
             alert(message);
         });
@@ -203,18 +211,33 @@
 
     document.body.appendChild(script);
 
-    // Показ модалки через 5 секунд
+    // Функция для разворачивания WebApp на весь экран
+    function expandWebApp() {
+        if (window.Telegram && window.Telegram.WebApp) {
+            Telegram.WebApp.expand();
+        }
+    }
+
+    window.onload = function() {
+        // Разворачиваем WebApp сразу при загрузке
+        expandWebApp();
+
+        // Проверяем, нужно ли показывать модалку
+        checkCookieConsent();
+    };
+
     function showCookieConsent() {
         document.getElementById("cookieConsent").style.display = "block";
     }
 
-    window.onload = function() {
-        setTimeout(showCookieConsent, 5000); // Задержка 5 секунд
-    };
-
-    // Функция для инициализации GameAnalytics после согласия
     function acceptCookies() {
         document.getElementById("cookieConsent").style.display = "none";
+        
+        // Сохраняем согласие в Local Storage и cookies
+        setLocalStorage("cookieConsent", "true");
+        setCookie("cookieConsent", "true", 365); // Сохраняем на 1 год
+
+        // Инициализируем аналитику
         initializeGameAnalytics();
     }
 
@@ -231,7 +254,6 @@
         };
         document.body.appendChild(script);
     }
-
 
     // Функция для получения данных пользователя из Telegram WebApp и передачи их в Unity
     function GetTelegramUserData() {
